@@ -8,8 +8,8 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_html_to_pdf/flutter_html_to_pdf.dart';
-// import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:flutter_webview_pro/webview_flutter.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+// import 'package:flutter_webview_pro/webview_flutter.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -24,6 +24,7 @@ import 'package:tab_indicator_styler/tab_indicator_styler.dart';
 // import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 final webViewKey = GlobalKey<_HomePageState>();
 
@@ -36,12 +37,12 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // late final WebViewController _controller;
-  // late InAppWebViewController _controller;
+  late InAppWebViewController _controller;
   // late bool result;
   bool connectionStatus = true;
   late String generatedPdfFilePath;
-  final Completer<WebViewController> _controller =
-  Completer<WebViewController>();
+  // final Completer<WebViewController> _controller =
+  // Completer<WebViewController>();
   final pw.Document pdf = pw.Document();
 
   Future check() async {
@@ -59,7 +60,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     if (Platform.isAndroid) {
-      WebView.platform = SurfaceAndroidWebView();
+      // WebView.platform = SurfaceAndroidWebView();
     }
     FlutterDownloader.registerCallback(downloadCallback);
     // internet();
@@ -470,44 +471,45 @@ class _HomePageState extends State<HomePage> {
 </html>
 """;
 
-  Future<void> _createPdf() async {
-    final WebViewController webViewController = await _controller.future;
-
-    // Get the HTML content of the WebView
-    final String html = await webViewController.evaluateJavascript('document.documentElement.outerHTML');
-
-    // Generate a PDF file
-    final pw.Document pdf = pw.Document();
-    final pw.Widget htmlWidget = pw.HtmlWidget(data: html);
-    pdf.addPage(pw.Page(build: (pw.Context context) {
-      return htmlWidget;
-    }));
-    final bytes = await pdf.save();
-
-    // Save the PDF file to device storage
-    final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/example.pdf');
-    await file.writeAsBytes(bytes);
-
-    // Open the PDF file with the default PDF viewer
-    await OpenFile.open(file.path);
-  }
+  // Future<void> _createPdf() async {
+  //   final WebViewController webViewController = await _controller.future;
+  //
+  //   // Get the HTML content of the WebView
+  //   final String html = await webViewController.evaluateJavascript('document.documentElement.outerHTML');
+  //
+  //   // Generate a PDF file
+  //   final pw.Document pdf = pw.Document();
+  //   final pw.Widget htmlWidget = pw.HtmlWidget(data: html);
+  //   pdf.addPage(pw.Page(build: (pw.Context context) {
+  //     return htmlWidget;
+  //   }));
+  //   final bytes = await pdf.save();
+  //
+  //   // Save the PDF file to device storage
+  //   final directory = await getApplicationDocumentsDirectory();
+  //   final file = File('${directory.path}/example.pdf');
+  //   await file.writeAsBytes(bytes);
+  //
+  //   // Open the PDF file with the default PDF viewer
+  //   await OpenFile.open(file.path);
+  // }
 
 
   @override
   Widget build(BuildContext context) {
+    // print('url testing:${_controller.evaluateJavascript(source: "window.document.URL;")}');
     // var appBarColor = AppColors.kAppBarColor;
     return WillPopScope(
       onWillPop: () async {
-        // if(await _controller.canGoBack()){
-        //   print('niti');
-        //   _controller.goBack();
+        if(await _controller.canGoBack()){
+          print('niti');
+          _controller.goBack();
           return false;
-        // }
-        // else{
-        //   print('niti else');
-        //   return true;
-        // }
+        }
+        else{
+          print('niti else');
+          return true;
+        }
       },
       child: Scaffold(
         appBar: AppBar(
@@ -524,6 +526,7 @@ class _HomePageState extends State<HomePage> {
             },
           ),
           actions: [
+            // (_controller.evaluateJavascript(source: "window.document.URL;") == "https://qswappweb.com/resumebuilder/public/featured")
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: GestureDetector(
@@ -543,8 +546,11 @@ class _HomePageState extends State<HomePage> {
               child: GestureDetector(
                 onTap: ()async{
                   print('Download');
+                  print('url:${await _controller.evaluateJavascript(source: "window.document.URL;")}');
                   print('niti hello${DateTime.now().hour}${DateTime.now().minute}${DateTime.now().second}');
-                  convert(cfData,"File Name${DateTime.now().toString().split(' ').first}${DateTime.now().hour}${DateTime.now().minute}${DateTime.now().second}");
+                  String html = await _controller.evaluateJavascript(source: "window.document.body.innerHTML;");
+                  print(html);
+                  convert(html,"File Name${DateTime.now().toString().split(' ').first}${DateTime.now().hour}${DateTime.now().minute}${DateTime.now().second}");
                   var targetPath2 = await _localPath;
                   File pdfFile() {
                     if (Platform.isIOS) {
@@ -560,7 +566,7 @@ class _HomePageState extends State<HomePage> {
                   SfPdfViewer.file(
                       pdfFile()
                   );
-                  // generateExampleDocument();
+                  generateExampleDocument();
                   print('download_successfull..//:');
                   // Navigator.push(context, MaterialPageRoute(builder: (context)=> const AppsStorePage()));
                 },
@@ -643,88 +649,122 @@ class _HomePageState extends State<HomePage> {
                         //       _controller = webViewController;
                         //     },
                         //   )
-                    ?WebView(
-                      initialUrl: 'https://www.example.com',
-                      onWebViewCreated: (WebViewController webViewController) {
-                        _controller.complete(webViewController);
-                      },
-                      javascriptMode: JavascriptMode.unrestricted,
-                    )
-                    //   ?InAppWebView(
-                    //   initialUrlRequest: URLRequest(url: Uri.parse('https://qswappweb.com/resumebuilder/public/featured')),
-                    //   // initialHeaders: {},
-                    //   initialOptions: InAppWebViewGroupOptions(
-                    //     crossPlatform: InAppWebViewOptions(
-                    //       // debuggingEnabled: true,
-                    //         useOnDownloadStart: true,
-                    //       allowFileAccessFromFileURLs: true,
-                    //       allowUniversalAccessFromFileURLs: true
-                    //     ),
-                    //     android: AndroidInAppWebViewOptions(
-                    //       useHybridComposition: true,
-                    //     ),
-                    //   ),
-                    //   // gestureNavigationEnabled: true,
-                    //       gestureRecognizers: Set()
-                    //         ..add(Factory<VerticalDragGestureRecognizer>(() =>
-                    //             VerticalDragGestureRecognizer()
-                    //               ..onDown =
-                    //                   (DragDownDetails dragDownDetails) {
-                    //                 _controller.getScrollY().then((value) {
-                    //                   if (value == 0 &&
-                    //                       dragDownDetails
-                    //                               .globalPosition.direction <
-                    //                           1) {
-                    //                     _controller.reload();
-                    //                   }
-                    //                 });
-                    //               }))
-                    //         ..add(Factory<LongPressGestureRecognizer>(() => LongPressGestureRecognizer())),
-                    //     onWebViewCreated:
-                    //             (InAppWebViewController webViewController) {
-                    //           _controller = webViewController;
-                    //         },
-                    //   // onWebViewCreated: (InAppWebViewController controller) {
-                    //   //   webView = controller;
-                    //   // },
-                    //   // onLoadStart: (InAppWebViewController controller, String url) {
-                    //   //
-                    //   // },
-                    //   // onLoadStop: (InAppWebViewController controller, String url) {
-                    //   //
-                    //   // },
-                    //
-                    //   // onPageCommitVisible: (con,uri){
-                    //   //   print("url ${uri.toString()}");
-                    //   //   con.goBack();
-                    //   // },
-                    //   onDownloadStartRequest: (controller, url) async {
-                    //     print('Permission.storage.status:${await Permission.storage.status}');
-                    //     // await checkPermission();
-                    //     // print(await checkPermission());
-                    //     print("onDownloadStart $url");
-                    //     if(await Permission.storage.request().isGranted){
-                    //       print('if true');
-                    //           final taskId = await FlutterDownloader.enqueue(
-                    //             url: 'https:\/\/qswappweb.com\/resumebuilder\/public\/uploads\/user_guide_image\/63b3eed2d1cef.png',
-                    //                 // 'https://qswappweb.com/resumebuilder/public/featured',
-                    //             saveInPublicStorage: true,
-                    //             savedDir:
-                    //                 (await getExternalStorageDirectory())!.path,
-                    //             showNotification: true,
-                    //             fileName: "Flamingo Order Details",
-                    //             // show download progress in status bar (for Android)
-                    //             openFileFromNotification:
-                    //                 true, // click on notification to open downloaded file (for Android)
-                    //           );
-                    //           print('taskId:$taskId');
-                    //         }
-                    //     else{
-                    //       print('else false');
-                    //       checkPermission();
-                    //     }
-                    //       },
+                    // ?WebView(
+                    //   initialUrl: 'https://qswappweb.com/resumebuilder/public/featured',
+                    //   onWebViewCreated: (WebViewController webViewController) {
+                    //     // _controller.complete(webViewController);
+                    //     _controller = webViewController;
+                    //   },
+                    //   javascriptMode: JavascriptMode.unrestricted,
                     // )
+                      ?InAppWebView(
+                      initialUrlRequest: URLRequest(url: Uri.parse('https://qswappweb.com/resumebuilder/public/featured')),
+                      // initialHeaders: {},
+                      initialOptions: InAppWebViewGroupOptions(
+                        crossPlatform: InAppWebViewOptions(
+                          // debuggingEnabled: true,
+                            useOnDownloadStart: true,
+                          allowFileAccessFromFileURLs: true,
+                          allowUniversalAccessFromFileURLs: true
+                        ),
+                        android: AndroidInAppWebViewOptions(
+                          useHybridComposition: true,
+                        ),
+                      ),
+                      // gestureNavigationEnabled: true,
+                          gestureRecognizers: Set()
+                            ..add(Factory<VerticalDragGestureRecognizer>(() =>
+                                VerticalDragGestureRecognizer()
+                                  ..onDown =
+                                      (DragDownDetails dragDownDetails) {
+                                    _controller.getScrollY().then((value) {
+                                      if (value == 0 &&
+                                          dragDownDetails
+                                                  .globalPosition.direction <
+                                              1) {
+                                        _controller.reload();
+                                      }
+                                    });
+                                  }))
+                            ..add(Factory<LongPressGestureRecognizer>(() => LongPressGestureRecognizer())),
+                        onWebViewCreated:
+                                (InAppWebViewController webViewController) {
+                              _controller = webViewController;
+                            },
+                      onLoadStop: (controller, url) async {
+                        if(await _controller.evaluateJavascript(source: "window.document.URL;") != "https://qswappweb.com/resumebuilder/public/featured"){
+                              // var result = await controller.evaluateJavascript(
+                              //     source: "1 + 1");
+                              // print(result.runtimeType); // int
+                              // print(result); //2
+                          var result = _controller.evaluateJavascript(source: '''
+  var fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.onchange = () => {
+    var file = fileInput.files[0];
+    var reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      window.flutter_injector.get('ImagePicker').invokeMethod('pickImage', reader.result);
+    };
+  };
+  fileInput.click();
+''');
+                          print(result.toString());
+                          print(result);
+                        }
+                      },
+                      // onWebViewCreated: (InAppWebViewController controller) {
+                      //   webView = controller;
+                      // },
+                      // onLoadStart: (InAppWebViewController controller, String url) {
+                      //
+                      // },
+                      // onLoadStop: (InAppWebViewController controller, String url) {
+                      //
+                      // },
+                      // onLoadStop: (controller, url) async {
+                      //   var html = await controller.evaluateJavascript(
+                      //       source: "window.document.getElementsByTagName('head')[0].outerHTML;");
+                      //   //   source: "window.document.body.innerText;");
+                      //   print("==========start================");
+                      //   // catchtext = html;
+                      //   print(':$html}');
+                      //
+                      // },
+
+                      // onPageCommitVisible: (con,uri){
+                      //   print("url ${uri.toString()}");
+                      //   con.goBack();
+                      // },
+                      // onDownloadStartRequest: (controller, url) async {
+                      //   print('Permission.storage.status:${await Permission.storage.status}');
+                      //   // await checkPermission();
+                      //   // print(await checkPermission());
+                      //   print("onDownloadStart $url");
+                      //   if(await Permission.storage.request().isGranted){
+                      //     print('if true');
+                      //         final taskId = await FlutterDownloader.enqueue(
+                      //           url: 'https:\/\/qswappweb.com\/resumebuilder\/public\/uploads\/user_guide_image\/63b3eed2d1cef.png',
+                      //               // 'https://qswappweb.com/resumebuilder/public/featured',
+                      //           saveInPublicStorage: true,
+                      //           savedDir:
+                      //               (await getExternalStorageDirectory())!.path,
+                      //           showNotification: true,
+                      //           fileName: "Flamingo Order Details",
+                      //           // show download progress in status bar (for Android)
+                      //           openFileFromNotification:
+                      //               true, // click on notification to open downloaded file (for Android)
+                      //         );
+                      //         print('taskId:$taskId');
+                      //       }
+                      //   else{
+                      //     print('else false');
+                      //     checkPermission();
+                      //   }
+                      //     },
+                    )
                         : Center(
                             child: Text(" no internet"),
                           ),

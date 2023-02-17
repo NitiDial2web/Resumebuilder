@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:remuse_builder/screens/splash_screen.dart';
 
 void main() async{
@@ -8,6 +9,11 @@ void main() async{
       debug: true, // optional: set to false to disable printing logs to console (default: true)
       // ignoreSsl: true
   );
+  await Permission.camera.request();
+  await Permission.microphone.request();
+  Permission.mediaLibrary.request();
+  Permission.photos.request();
+  Permission.storage.request();
   runApp(const MyApp());
 }
 

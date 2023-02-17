@@ -9,6 +9,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_html_to_pdf/flutter_html_to_pdf.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
+import 'package:image_picker/image_picker.dart';
 // import 'package:flutter_webview_pro/webview_flutter.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -25,6 +27,7 @@ import 'package:tab_indicator_styler/tab_indicator_styler.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:webview_flutter_upload/webview_flutter.dart';
 
 final webViewKey = GlobalKey<_HomePageState>();
 
@@ -38,12 +41,16 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   // late final WebViewController _controller;
   late InAppWebViewController _controller;
+  final GlobalKey webViewKey = GlobalKey();
+  final flutterWebviewPlugin = new FlutterWebviewPlugin();
   // late bool result;
   bool connectionStatus = true;
   late String generatedPdfFilePath;
   // final Completer<WebViewController> _controller =
   // Completer<WebViewController>();
   final pw.Document pdf = pw.Document();
+
+  PickedFile? _imageFile;
 
   Future check() async {
     try {
@@ -203,6 +210,20 @@ class _HomePageState extends State<HomePage> {
       print("Can-not get download folder path");
     }
     return directory?.path;
+  }
+  Future<void> _pickImage(ImageSource source) async {
+    PickedFile? selected = await ImagePicker.platform.pickImage(source: source);
+
+    setState(() {
+      _imageFile = selected;
+    });
+
+    print("close");
+    print('_imageFile:${_imageFile!.path.toString()}');
+    if (_imageFile == null) {
+      print("close in");
+      flutterWebviewPlugin.show();
+    }
   }
 
   String cfData= """<!DOCTYPE html>
@@ -437,6 +458,7 @@ class _HomePageState extends State<HomePage> {
 
 		document.getElementById("btn_pdf").style.display = "block";
 		window.jsPDF = window.jspdf.jsPDF;
+    window.flutter_injector.get('ImagePicker').invokeMethod('pickImage', reader.result);
 
 		// Convert HTML content to PDF
 		function generatePDF() {
@@ -657,114 +679,387 @@ class _HomePageState extends State<HomePage> {
                     //   },
                     //   javascriptMode: JavascriptMode.unrestricted,
                     // )
-                      ?InAppWebView(
-                      initialUrlRequest: URLRequest(url: Uri.parse('https://qswappweb.com/resumebuilder/public/featured')),
-                      // initialHeaders: {},
-                      initialOptions: InAppWebViewGroupOptions(
-                        crossPlatform: InAppWebViewOptions(
-                          // debuggingEnabled: true,
-                            useOnDownloadStart: true,
-                          allowFileAccessFromFileURLs: true,
-                          allowUniversalAccessFromFileURLs: true
-                        ),
-                        android: AndroidInAppWebViewOptions(
-                          useHybridComposition: true,
-                        ),
-                      ),
-                      // gestureNavigationEnabled: true,
-                          gestureRecognizers: Set()
-                            ..add(Factory<VerticalDragGestureRecognizer>(() =>
-                                VerticalDragGestureRecognizer()
-                                  ..onDown =
-                                      (DragDownDetails dragDownDetails) {
-                                    _controller.getScrollY().then((value) {
-                                      if (value == 0 &&
-                                          dragDownDetails
-                                                  .globalPosition.direction <
-                                              1) {
-                                        _controller.reload();
-                                      }
-                                    });
-                                  }))
-                            ..add(Factory<LongPressGestureRecognizer>(() => LongPressGestureRecognizer())),
-                        onWebViewCreated:
-                                (InAppWebViewController webViewController) {
-                              _controller = webViewController;
-                            },
-                      onLoadStop: (controller, url) async {
-                        if(await _controller.evaluateJavascript(source: "window.document.URL;") != "https://qswappweb.com/resumebuilder/public/featured"){
-                              // var result = await controller.evaluateJavascript(
-                              //     source: "1 + 1");
-                              // print(result.runtimeType); // int
-                              // print(result); //2
-                          var result = _controller.evaluateJavascript(source: '''
-  var fileInput = document.createElement('input');
-  fileInput.type = 'file';
-  fileInput.accept = 'image/*';
-  fileInput.onchange = () => {
-    var file = fileInput.files[0];
-    var reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      window.flutter_injector.get('ImagePicker').invokeMethod('pickImage', reader.result);
-    };
-  };
-  fileInput.click();
-''');
-                          print(result.toString());
-                          print(result);
-                        }
-                      },
-                      // onWebViewCreated: (InAppWebViewController controller) {
-                      //   webView = controller;
-                      // },
-                      // onLoadStart: (InAppWebViewController controller, String url) {
-                      //
-                      // },
-                      // onLoadStop: (InAppWebViewController controller, String url) {
-                      //
-                      // },
-                      // onLoadStop: (controller, url) async {
-                      //   var html = await controller.evaluateJavascript(
-                      //       source: "window.document.getElementsByTagName('head')[0].outerHTML;");
-                      //   //   source: "window.document.body.innerText;");
-                      //   print("==========start================");
-                      //   // catchtext = html;
-                      //   print(':$html}');
-                      //
-                      // },
+                    ?InAppWebView(
+                      key: webViewKey,
+                      initialData: InAppWebViewInitialData(data: """
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 
-                      // onPageCommitVisible: (con,uri){
-                      //   print("url ${uri.toString()}");
-                      //   con.goBack();
-                      // },
-                      // onDownloadStartRequest: (controller, url) async {
-                      //   print('Permission.storage.status:${await Permission.storage.status}');
-                      //   // await checkPermission();
-                      //   // print(await checkPermission());
-                      //   print("onDownloadStart $url");
-                      //   if(await Permission.storage.request().isGranted){
-                      //     print('if true');
-                      //         final taskId = await FlutterDownloader.enqueue(
-                      //           url: 'https:\/\/qswappweb.com\/resumebuilder\/public\/uploads\/user_guide_image\/63b3eed2d1cef.png',
-                      //               // 'https://qswappweb.com/resumebuilder/public/featured',
-                      //           saveInPublicStorage: true,
-                      //           savedDir:
-                      //               (await getExternalStorageDirectory())!.path,
-                      //           showNotification: true,
-                      //           fileName: "Flamingo Order Details",
-                      //           // show download progress in status bar (for Android)
-                      //           openFileFromNotification:
-                      //               true, // click on notification to open downloaded file (for Android)
-                      //         );
-                      //         print('taskId:$taskId');
-                      //       }
-                      //   else{
-                      //     print('else false');
-                      //     checkPermission();
-                      //   }
-                      //     },
+<head>
+	<title></title>
+
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<br />
+	<style type="text/css">
+		p {
+			margin: 0;
+			padding: 0;
+		}
+
+		.ft10 {
+			font-size: 14px;
+			font-family: Times;
+			color: #ffffff;
+		}
+
+		.ft11 {
+			font-size: 102px;
+			font-family: Times;
+			color: #604d41;
+		}
+
+		.ft12 {
+			font-size: 24px;
+			font-family: Times;
+			color: #000000;
+		}
+
+		.ft13 {
+			font-size: 27px;
+			font-family: Times;
+			color: #41342d;
+		}
+
+		.ft14 {
+			font-size: 15px;
+			font-family: Times;
+			color: #604d41;
+		}
+
+		.ft15 {
+			font-size: 15px;
+			font-family: Times;
+			color: #957866;
+		}
+
+		.ft16 {
+			font-size: 15px;
+			font-family: Times;
+			color: #604d41;
+		}
+
+		.ft17 {
+			font-size: 15px;
+			line-height: 26px;
+			font-family: Times;
+			color: #604d41;
+		}
+
+		#drop-zone {
+			object-fit: cover;
+			width: 393px;
+			height: 383px;
+			display: none;
+			border-bottom-left-radius: 328px;
+			border-bottom-right-radius: 329px;
+			top:0px;
+			left:35px;
+			display: flex;
+			justify-content: center;
+			align-items: center;
+		}
+
+		.img_dd {
+			/* object-fit: cover; */
+			width: 393px;
+			height: 383px;
+			display: none;
+			border-bottom-left-radius: 328px;
+			border-bottom-right-radius: 329px;
+			text-decoration: none;
+		}
+	</style>
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+	<script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/5/tinymce.min.js" referrerpolicy="origin"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+
+<body bgcolor="#A0A0A0" vlink="blue" link="blue" id="main" style="margin-top: 200px;">
+		<div id="main1" style="box-sizing: border-box;margin-left: 37px;">
+			<div id="myeditablediv" style="position:absolute;width:892px;height:100px;z-index:99;">
+
+				<p style="position:absolute;top:396px;left:634px;white-space:nowrap" class="ft10">
+					123&#160;Anywhere&#160;St.,&#160;Any&#160;City</p>
+				<div id="drop-zone" style="position:absolute;white-space:wrap">
+					<img src="" alt="" class="img_dd" style="object-fit: cover;">
+					<p style="display: none;">Drop file or click to upload</p>
+					<input type="file" id="myfile" hidden>
+				</div>
+			</div>
+			<div id="myeditablediv1" style="position:relative;width:892px;height:1263px;">
+				<img width="892" height="1263" src="https://www.linkpicture.com/q/Account1.png" alt="background image" style="position:absolute;"/>
+				<p style="position:absolute;top:104px;left:480px;white-space:nowrap" class="ft11">Hannah</p>
+				<p style="position:absolute;top:199px;left:478px;white-space:nowrap" class="ft11">Morales</p>
+				<p style="position:absolute;top:326px;left:491px;white-space:nowrap" class="ft12">
+					A&#160;c&#160;c&#160;o&#160;u&#160;n&#160;t&#160;i&#160;n&#160;g&#160;&#160;&#160;M&#160;a&#160;n&#160;a&#160;g&#160;e&#160;r
+				</p>
+				<p style="position:absolute;top:395px;left:327px;white-space:nowrap" class="ft10">
+					hello@reallygreatsite.com
+				</p>
+				<p style="position:absolute;top:395px;left:78px;white-space:nowrap" class="ft10">+123-456-7890&#160;</p>
+				<p style="position:absolute;top:674px;left:43px;white-space:nowrap" class="ft13">
+					W&#160;O&#160;R&#160;K&#160;&#160;&#160;E&#160;X&#160;P&#160;E&#160;R&#160;I&#160;E&#160;N&#160;C&#160;E
+				</p>
+				<p style="position:absolute;top:796px;left:66px;white-space:nowrap" class="ft17">
+					Review&#160;&#160;financial&#160;&#160;statements&#160;&#160;for&#160;&#160;accuracy<br />and&#160;legal&#160;compliance<br />Enter&#160;&#160;accounting&#160;&#160;related&#160;&#160;information&#160;&#160;into<br />business&#160;logs
+				</p>
+				<p style="position:absolute;top:730px;left:43px;white-space:nowrap" class="ft15">
+					<b>Staff&#160;Accountant</b>
+				</p>
+				<p style="position:absolute;top:460px;left:43px;white-space:nowrap" class="ft13">
+					E&#160;D&#160;U&#160;C&#160;A&#160;T&#160;I&#160;O&#160;N&#160;&#160;</p>
+				<p style="position:absolute;top:506px;left:73px;white-space:nowrap" class="ft15">
+					<b>Larana&#160;High&#160;School&#160;(2010&#160;-&#160;2013)</b>
+				</p>
+				<p style="position:absolute;top:620px;left:97px;white-space:nowrap" class="ft14">GPA&#160;:&#160;3.82
+				</p>
+				<p style="position:absolute;top:552px;left:73px;white-space:nowrap" class="ft15">
+					<b>Fauget&#160;University&#160;(2013&#160;-&#160;2017)</b>
+				</p>
+				<p style="position:absolute;top:590px;left:74px;white-space:nowrap" class="ft16">
+					<i>Bachelor&#160;of&#160;Accounting</i>
+				</p>
+				<p style="position:absolute;top:759px;left:43px;white-space:nowrap" class="ft16">
+					<i>Thynk&#160;Unlimited&#160;(2017&#160;-&#160;2020)</i>
+				</p>
+				<p style="position:absolute;top:981px;left:66px;white-space:nowrap" class="ft17">
+					Plan,&#160;&#160;implement&#160;&#160;and&#160;&#160;supervise&#160;&#160;the<br />company’s&#160;financial&#160;strategy<br />Manage&#160;&#160;the&#160;&#160;company’s&#160;&#160;financial&#160;&#160;accounts,<br />payrolls,&#160;&#160;budget,&#160;&#160;cash&#160;&#160;receipts&#160;&#160;and<br />financial&#160;assets<br />Handle&#160;&#160;the&#160;&#160;company’s&#160;&#160;transactions&#160;&#160;and<br />debts&#160;and&#160;do&#160;cash&#160;flow&#160;forecasting
+				</p>
+				<p style="position:absolute;top:916px;left:43px;white-space:nowrap" class="ft15">
+					<b>Accounting&#160;Manager</b>
+				</p>
+				<p style="position:absolute;top:945px;left:43px;white-space:nowrap" class="ft16">
+					<i>Aldenaire&#160;&amp;&#160;Partners&#160;(2020&#160;-&#160;2022)</i>
+				</p>
+				<p style="position:absolute;top:785px;left:587px;white-space:nowrap" class="ft17">
+					Financial&#160;reporting<br />Payroll&#160;&#160;accounting&#160;&#160;and&#160;&#160;tax<br />computation<br />Standard&#160;&#160;cost&#160;&#160;analyst&#160;&#160;and<br />system&#160;automation
+				</p>
+				<p style="position:absolute;top:1004px;left:594px;white-space:nowrap" class="ft17">
+					Won&#160;Accounting&#160;Competition<br />2012</p>
+				<p style="position:absolute;top:959px;left:563px;white-space:nowrap" class="ft13">
+					A&#160;W&#160;A&#160;R&#160;D&#160;S</p>
+				<p style="position:absolute;top:730px;left:563px;white-space:nowrap" class="ft13">
+					S&#160;K&#160;I&#160;L&#160;L
+				</p>
+				<p style="position:absolute;top:557px;left:563px;white-space:nowrap" class="ft17">
+					Oversees&#160;&#160;preparation&#160;&#160;of&#160;&#160;business<br />activity&#160;</p>
+				<p style="position:absolute;top:584px;left:674px;white-space:nowrap" class="ft14">reports,&#160;</p>
+				<p style="position:absolute;top:584px;left:789px;white-space:nowrap" class="ft14">financial</p>
+				<p style="position:absolute;top:611px;left:563px;white-space:nowrap" class="ft17">
+					forecasts,&#160;&#160;and&#160;&#160;annual&#160;&#160;budgets.<br />Oversees&#160;</p>
+				<p style="position:absolute;top:638px;left:669px;white-space:nowrap" class="ft14">the&#160;</p>
+				<p style="position:absolute;top:638px;left:725px;white-space:nowrap" class="ft14">production&#160;</p>
+				<p style="position:absolute;top:638px;left:845px;white-space:nowrap" class="ft14">of</p>
+				<p style="position:absolute;top:665px;left:563px;white-space:nowrap" class="ft17">
+					periodic&#160;&#160;financial&#160;&#160;reports&#160;&#160;and<br />much&#160;more.</p>
+				<p style="position:absolute;top:514px;left:563px;white-space:nowrap" class="ft13">
+					P&#160;R&#160;O&#160;F&#160;I&#160;L&#160;E</p>
+			</div>
+		</div>
+	<div id="editor"></div>
+	<center>
+		<p>
+			<button onclick="generatePDF()" id="btn_pdf">generate PDF</button>
+		</p>
+	</center>
+	<script type="text/javascript">
+		tinymce.init({
+			selector: '#myeditablediv1',
+			inline: true
+		});
+	</script>
+	<script>
+		const dropZone = document.querySelector('#drop-zone');
+		const inputElement = document.querySelector('input');
+		const img = document.querySelector('img');
+		let p = document.querySelector('p')
+
+		inputElement.addEventListener('change', function (e) {
+			const clickFile = this.files[0];
+			if (clickFile) {
+				img.style = "display:block;";
+				p.style = 'display: none';
+				const reader = new FileReader();
+				reader.readAsDataURL(clickFile);
+				reader.onloadend = function () {
+					const result = reader.result;
+					let src = this.result;
+					img.src = src;
+					img.alt = clickFile.name
+				}
+			}
+		})
+		dropZone.addEventListener('click', () => inputElement.click());
+		dropZone.addEventListener('dragover', (e) => {
+			e.preventDefault();
+		});
+		dropZone.addEventListener('drop', (e) => {
+			e.preventDefault();
+			img.style = "display:block;";
+			let file = e.dataTransfer.files[0];
+
+			const reader = new FileReader();
+			reader.readAsDataURL(file);
+			reader.onloadend = function () {
+				e.preventDefault()
+				p.style = 'display: none';
+				let src = this.result;
+				img.src = src;
+				img.alt = file.name
+			}
+		});
+	</script>
+	<script type="text/javascript">
+
+		document.getElementById("btn_pdf").style.display = "block";
+		window.jsPDF = window.jspdf.jsPDF;
+		window.flutter_injector.get('ImagePicker').invokeMethod('pickImage', reader.result);
+		// Convert HTML content to PDF
+		function generatePDF() {
+			var doc = new jsPDF();
+			document.getElementById("main").style.marginleft = 0;
+			document.getElementById("main").style.objectFit = "cover";
+			document.getElementById("main").style.top = 0;
+			document.getElementById("myeditablediv").style.zIndex = "99";
+			document.getElementById("btn_pdf").style.display = "none";
+
+			// Source HTMLElement or a string containing HTML.
+			var elementHTML = document.querySelector("#main");
+			doc.html(elementHTML, {
+				callback: function (doc) {
+					// Save the PDF
+					// document.getElementById("myeditablediv").style.zIndex = "99";
+					doc.save('document-html.pdf');
+				},
+				margin: [-50, 0, 0, -10],
+				
+				// autoPaging: 'text',
+				x: 0,
+				y: 0,
+				width: 158, //target width in the PDF document
+				windowWidth: 675 //window width in CSS pixels
+			});
+			
+		}
+	</script>
+</body>
+
+</html>
+                """),
+                      onWebViewCreated: (controller) {
+                        _controller = controller;
+                        _pickImage(ImageSource.gallery);
+                      },
                     )
+//                       ?InAppWebView(
+//                       initialUrlRequest: URLRequest(url: Uri.parse('https://qswappweb.com/resumebuilder/public/featured')),
+//                       // initialHeaders: {},
+//                       initialOptions: InAppWebViewGroupOptions(
+//                         crossPlatform: InAppWebViewOptions(
+//                           // debuggingEnabled: true,
+//                             useOnDownloadStart: true,
+//                           allowFileAccessFromFileURLs: true,
+//                           allowUniversalAccessFromFileURLs: true
+//                         ),
+//                         android: AndroidInAppWebViewOptions(
+//                           useHybridComposition: true,
+//                         ),
+//                       ),
+//                       // gestureNavigationEnabled: true,
+//                           gestureRecognizers: Set()
+//                             ..add(Factory<VerticalDragGestureRecognizer>(() =>
+//                                 VerticalDragGestureRecognizer()
+//                                   ..onDown =
+//                                       (DragDownDetails dragDownDetails) {
+//                                     _controller.getScrollY().then((value) {
+//                                       if (value == 0 &&
+//                                           dragDownDetails
+//                                                   .globalPosition.direction <
+//                                               1) {
+//                                         _controller.reload();
+//                                       }
+//                                     });
+//                                   }))
+//                             ..add(Factory<LongPressGestureRecognizer>(() => LongPressGestureRecognizer())),
+//                         onWebViewCreated:
+//                                 (InAppWebViewController webViewController) {
+//                               _controller = webViewController;
+//                             },
+//                       onLoadStop: (controller, url) async {
+//                         if(await _controller.evaluateJavascript(source: "window.document.URL;") != "https://qswappweb.com/resumebuilder/public/featured"){
+//                               // var result = await controller.evaluateJavascript(
+//                               //     source: "1 + 1");
+//                               // print(result.runtimeType); // int
+//                               // print(result); //2
+//                           var result = _controller.evaluateJavascript(source: '''
+//   var fileInput = document.createElement('input');
+//   fileInput.type = 'file';
+//   fileInput.accept = 'image/*';
+//   fileInput.onchange = () => {
+//     var file = fileInput.files[0];
+//     var reader = new FileReader();
+//     reader.readAsDataURL(file);
+//     reader.onload = () => {
+//       window.flutter_injector.get('ImagePicker').invokeMethod('pickImage', reader.result);
+//     };
+//   };
+//   fileInput.click();
+// ''');
+//                           print(result.toString());
+//                           print(result);
+//                         }
+//                       },
+//                       // onWebViewCreated: (InAppWebViewController controller) {
+//                       //   webView = controller;
+//                       // },
+//                       // onLoadStart: (InAppWebViewController controller, String url) {
+//                       //
+//                       // },
+//                       // onLoadStop: (InAppWebViewController controller, String url) {
+//                       //
+//                       // },
+//                       // onLoadStop: (controller, url) async {
+//                       //   var html = await controller.evaluateJavascript(
+//                       //       source: "window.document.getElementsByTagName('head')[0].outerHTML;");
+//                       //   //   source: "window.document.body.innerText;");
+//                       //   print("==========start================");
+//                       //   // catchtext = html;
+//                       //   print(':$html}');
+//                       //
+//                       // },
+//
+//                       // onPageCommitVisible: (con,uri){
+//                       //   print("url ${uri.toString()}");
+//                       //   con.goBack();
+//                       // },
+//                       // onDownloadStartRequest: (controller, url) async {
+//                       //   print('Permission.storage.status:${await Permission.storage.status}');
+//                       //   // await checkPermission();
+//                       //   // print(await checkPermission());
+//                       //   print("onDownloadStart $url");
+//                       //   if(await Permission.storage.request().isGranted){
+//                       //     print('if true');
+//                       //         final taskId = await FlutterDownloader.enqueue(
+//                       //           url: 'https:\/\/qswappweb.com\/resumebuilder\/public\/uploads\/user_guide_image\/63b3eed2d1cef.png',
+//                       //               // 'https://qswappweb.com/resumebuilder/public/featured',
+//                       //           saveInPublicStorage: true,
+//                       //           savedDir:
+//                       //               (await getExternalStorageDirectory())!.path,
+//                       //           showNotification: true,
+//                       //           fileName: "Flamingo Order Details",
+//                       //           // show download progress in status bar (for Android)
+//                       //           openFileFromNotification:
+//                       //               true, // click on notification to open downloaded file (for Android)
+//                       //         );
+//                       //         print('taskId:$taskId');
+//                       //       }
+//                       //   else{
+//                       //     print('else false');
+//                       //     checkPermission();
+//                       //   }
+//                       //     },
+//                     )
                         : Center(
                             child: Text(" no internet"),
                           ),

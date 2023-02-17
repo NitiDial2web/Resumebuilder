@@ -46,6 +46,8 @@ dependencies:
 #  flutter_webview_pro: ^3.0.1+4
   pdf: ^3.9.0
   flutter_webview_plugin: ^0.4.0
+  image_picker: ^0.8.6+1
+  webview_flutter_upload: ^0.2.0
 #  flutter_widget_from_html: 0.8.5
 
   # The following adds the Cupertino Icons font to your application.

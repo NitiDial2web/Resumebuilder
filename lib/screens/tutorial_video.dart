@@ -7,6 +7,7 @@ import 'package:remuse_builder/common/AppStrings.dart';
 import 'package:remuse_builder/models/demo_model.dart';
 import 'package:remuse_builder/models/tutorial_video.dart';
 import 'package:remuse_builder/screens/apps_store.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class TutorialVideoPage extends StatefulWidget {
   const TutorialVideoPage({Key? key}) : super(key: key);
@@ -54,6 +55,21 @@ class _TutorialVideoPageState extends State<TutorialVideoPage> {
       print('exception getHomeImages $exception');
     }
     // return null;
+  }
+
+  Future<void> _launchYoutubeVideo(String _youtubeUrl) async {
+    if (_youtubeUrl != null && _youtubeUrl.isNotEmpty) {
+      if (await canLaunch(_youtubeUrl)) {
+        final bool _nativeAppLaunchSucceeded = await launch(
+          _youtubeUrl,
+          forceSafariVC: false,
+          universalLinksOnly: true,
+        );
+        if (!_nativeAppLaunchSucceeded) {
+          await launch(_youtubeUrl, forceSafariVC: true);
+        }
+      }
+    }
   }
 
   @override
@@ -116,24 +132,30 @@ class _TutorialVideoPageState extends State<TutorialVideoPage> {
                     return Padding(
                       padding: const EdgeInsets.symmetric(
                           vertical: 20, horizontal: 30),
-                      child: Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: 170,
-                        decoration: BoxDecoration(
-                            image: DecorationImage(
-                                image: NetworkImage(
-                                    snapshot.data!.data[index].video),
-                                fit: BoxFit.fill),
-                            color: AppColors.kGrey,
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.grey,
-                                  blurRadius: 5.0,
-                                  offset: Offset(0, 3)),
-                            ],
-                            borderRadius:
-                                BorderRadius.all(Radius.circular(30))),
-                        child: Text('${snapshot.data!.data[index].video}'),
+                      child: GestureDetector(
+                        onTap: (){
+                          print('video:${snapshot.data!.data[index].video}');
+                          _launchYoutubeVideo(snapshot.data!.data[index].video);
+                        },
+                        child: Container(
+                          width: MediaQuery.of(context).size.width,
+                          height: 170,
+                          decoration: BoxDecoration(
+                              image: DecorationImage(
+                                  image: NetworkImage(
+                                      snapshot.data!.data[index].video),
+                                  fit: BoxFit.fill),
+                              color: AppColors.kGrey,
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.grey,
+                                    blurRadius: 5.0,
+                                    offset: Offset(0, 3)),
+                              ],
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30))),
+                          child: Text('${snapshot.data!.data[index].video}'),
+                        ),
                       ),
                     );
                   },

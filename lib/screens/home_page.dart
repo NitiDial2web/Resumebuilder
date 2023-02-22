@@ -9,8 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_html_to_pdf/flutter_html_to_pdf.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
+// import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 import 'package:image_picker/image_picker.dart';
+
 // import 'package:flutter_webview_pro/webview_flutter.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -26,8 +27,8 @@ import 'package:tab_indicator_styler/tab_indicator_styler.dart';
 // import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:pdf/pdf.dart';
-import 'package:webview_flutter/webview_flutter.dart';
-import 'package:webview_flutter_upload/webview_flutter.dart';
+// import 'package:webview_flutter/webview_flutter.dart';
+// import 'package:webview_flutter_upload/webview_flutter.dart';
 
 final webViewKey = GlobalKey<_HomePageState>();
 
@@ -42,7 +43,7 @@ class _HomePageState extends State<HomePage> {
   // late final WebViewController _controller;
   late InAppWebViewController _controller;
   final GlobalKey webViewKey = GlobalKey();
-  final flutterWebviewPlugin = new FlutterWebviewPlugin();
+  // final flutterWebviewPlugin = new FlutterWebviewPlugin();
   // late bool result;
   bool connectionStatus = true;
   late String generatedPdfFilePath;
@@ -222,7 +223,7 @@ class _HomePageState extends State<HomePage> {
     print('_imageFile:${_imageFile!.path.toString()}');
     if (_imageFile == null) {
       print("close in");
-      flutterWebviewPlugin.show();
+      // flutterWebviewPlugin.show();
     }
   }
 
@@ -933,23 +934,53 @@ class _HomePageState extends State<HomePage> {
 					doc.save('document-html.pdf');
 				},
 				margin: [-50, 0, 0, -10],
-				
+
 				// autoPaging: 'text',
 				x: 0,
 				y: 0,
 				width: 158, //target width in the PDF document
 				windowWidth: 675 //window width in CSS pixels
 			});
-			
+
 		}
 	</script>
 </body>
 
 </html>
                 """),
+    onLoadStop: (controller, url) async {
+                        print('onload');
+                        print(_controller.webStorage.sessionStorage.webStorageType.toString());
+                        if(await _controller.evaluateJavascript(source: "window.document.URL;") != "https://qswappweb.com/resumebuilder/public/featured"){
+                          print('if onload');
+                              // var result = await controller.evaluateJavascript(
+                              //     source: "1 + 1");
+                              // print(result.runtimeType); // int
+                              // print(result); //2
+                          var result = _controller.evaluateJavascript(source: '''
+  var fileInput = document.createElement('input');
+  fileInput.type = 'file';
+  fileInput.accept = 'image/*';
+  fileInput.onchange = () => {
+    var file = fileInput.files[0];
+    var reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      window.flutter_injector.get('ImagePicker').invokeMethod('pickImage', reader.result);
+    };
+  };
+  fileInput.click();
+''');
+                          print(result.toString());
+                          print(result);
+                        }
+                      else{
+                        print('else onload');
+                        }
+                        },
                       onWebViewCreated: (controller) {
                         _controller = controller;
-                        _pickImage(ImageSource.gallery);
+                        // _pickImage(ImageSource.gallery);
                       },
                     )
 //                       ?InAppWebView(
@@ -988,26 +1019,26 @@ class _HomePageState extends State<HomePage> {
 //                             },
 //                       onLoadStop: (controller, url) async {
 //                         if(await _controller.evaluateJavascript(source: "window.document.URL;") != "https://qswappweb.com/resumebuilder/public/featured"){
-//                               // var result = await controller.evaluateJavascript(
-//                               //     source: "1 + 1");
-//                               // print(result.runtimeType); // int
-//                               // print(result); //2
-//                           var result = _controller.evaluateJavascript(source: '''
-//   var fileInput = document.createElement('input');
-//   fileInput.type = 'file';
-//   fileInput.accept = 'image/*';
-//   fileInput.onchange = () => {
-//     var file = fileInput.files[0];
-//     var reader = new FileReader();
-//     reader.readAsDataURL(file);
-//     reader.onload = () => {
-//       window.flutter_injector.get('ImagePicker').invokeMethod('pickImage', reader.result);
-//     };
-//   };
-//   fileInput.click();
-// ''');
-//                           print(result.toString());
-//                           print(result);
+//                               var result = await controller.evaluateJavascript(
+//                                   source: "1 + 1");
+//                               print(result.runtimeType); // int
+//                               print(result); //2
+// //                           var result = _controller.evaluateJavascript(source: '''
+// //   var fileInput = document.createElement('input');
+// //   fileInput.type = 'file';
+// //   fileInput.accept = 'image/*';
+// //   fileInput.onchange = () => {
+// //     var file = fileInput.files[0];
+// //     var reader = new FileReader();
+// //     reader.readAsDataURL(file);
+// //     reader.onload = () => {
+// //       window.flutter_injector.get('ImagePicker').invokeMethod('pickImage', reader.result);
+// //     };
+// //   };
+// //   fileInput.click();
+// // ''');
+// //                           print(result.toString());
+// //                           print(result);
 //                         }
 //                       },
 //                       // onWebViewCreated: (InAppWebViewController controller) {

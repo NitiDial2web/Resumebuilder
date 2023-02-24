@@ -40,4 +40,6 @@ class AppStrings{
 
   //Prefernces
   static const String kNotificationEnable = 'Notification_Enable';
+  static const kPrefDeviceToken = 'device_token';
+  static const kPrefDeviceType = 'device_type';
 }

@@ -3,12 +3,15 @@ import 'dart:io';
 import 'dart:isolate';
 import 'dart:ui';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_html_to_pdf/flutter_html_to_pdf.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:html/dom.dart' as document;
 
 // import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
 import 'package:image_picker/image_picker.dart';
@@ -19,11 +22,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:remuse_builder/common/AppButtons.dart';
 import 'package:remuse_builder/common/AppColors.dart';
+import 'package:remuse_builder/common/AppStrings.dart';
 import 'package:remuse_builder/screens/apps_store.dart';
 import 'package:remuse_builder/screens/settings_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:screenshot/screenshot.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:tab_indicator_styler/tab_indicator_styler.dart';
-
+// import 'package:html2md/html2md.dart' as html2md;
 // import 'package:webview_flutter/webview_flutter.dart';
 // import 'package:webview_flutter_android/webview_flutter_android.dart';
 // import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
@@ -33,6 +39,7 @@ import 'package:pdf/pdf.dart';
 // import 'package:webview_flutter/webview_flutter.dart';
 // import 'package:webview_flutter_upload/webview_flutter.dart';
 import 'package:html/parser.dart' show parse;
+import 'package:webcontent_converter/webcontent_converter.dart';
 
 final webViewKey = GlobalKey<_HomePageState>();
 
@@ -44,11 +51,16 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late String _token;
+  late String _deviceType;
+  late FirebaseMessaging messaging;
+  late SharedPreferences preferences;
   // late final WebViewController _controller;
   late InAppWebViewController _controller;
   final GlobalKey webViewKey = GlobalKey();
   bool _innerpage = false;
 
+  Uint8List? bytes;
   // final flutterWebviewPlugin = new FlutterWebviewPlugin();
   // late bool result;
   bool connectionStatus = true;
@@ -74,6 +86,30 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _token = '';
+    _deviceType = '';
+    SharedPreferences.getInstance().then((value) async {
+      await Firebase.initializeApp();
+      print('nidhi');
+      messaging = FirebaseMessaging.instance;
+
+      preferences = value;
+      messaging.getToken().then((value) async {
+        print('Firebase registration token $value');
+        _token = value.toString();
+        print('_token:$_token');
+        await preferences.setString(AppStrings.kPrefDeviceToken, _token);
+        if (Platform.isAndroid) {
+          await preferences.setString(AppStrings.kPrefDeviceType, 'Android');
+        }
+        if (Platform.isIOS) {
+          await preferences.setString(AppStrings.kPrefDeviceType, 'Ios');
+        }
+        print(
+            'login device token is ${preferences.getString(AppStrings.kPrefDeviceToken)}');
+      });
+    });
+
     if (Platform.isAndroid) {
       // WebView.platform = SurfaceAndroidWebView();
     }
@@ -148,6 +184,64 @@ class _HomePageState extends State<HomePage> {
     // _controller = controller;
   }
 
+  // Future<void> deviceRegistration() async {
+  //   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+  //   try {
+  //     if (Platform.isAndroid) {
+  //       var info = await deviceInfo.androidInfo;
+  //       print(info);
+  //       setState(() {
+  //         _deviceType = 'Android';
+  //       });
+  //
+  //       var response =
+  //       await http.post(Uri.parse(AppStrings.kDeviceRegiUrl), body: {
+  //         'device_token':
+  //         await preferences.getString(AppStrings.kPrefDeviceToken),
+  //         'device_type': _deviceType,
+  //         'language': 'En',
+  //       });
+  //       print(response.statusCode);
+  //       if (response.statusCode == 200) {
+  //         if (response.body.isNotEmpty) {
+  //           print('android nidhi');
+  //           var data = json.decode(response.body);
+  //           var _usersData = data['data'];
+  //           print('_deviceDetails:$_usersData');
+  //           await preferences.setString(AppStrings.kPrefDeviceToken,
+  //               _usersData[0][AppStrings.kPrefDeviceToken].toString());
+  //           await preferences.setString(AppStrings.kPrefDeviceType,
+  //               _usersData[0][AppStrings.kPrefDeviceType].toString());
+  //         }
+  //       }
+  //
+  //       //UUID for Android
+  //     } else if (Platform.isIOS) {
+  //       var data = await deviceInfo.iosInfo;
+  //       setState(() {
+  //         _deviceType = 'Ios';
+  //         _token = data.identifierForVendor!;
+  //       }); //UUID for iOS
+  //       var response =
+  //       await http.post(Uri.parse(AppStrings.kDeviceRegiUrl), body: {
+  //         'device_token':
+  //         await preferences.getString(AppStrings.kPrefDeviceToken),
+  //         'device_type': _deviceType,
+  //         'language': 'En',
+  //       });
+  //       var data1 = json.decode(response.body);
+  //       var _usersData = data1['data'];
+  //       //print(_usersData);
+  //       await preferences.setString(AppStrings.kPrefDeviceToken,
+  //           _usersData[0][AppStrings.kPrefDeviceToken].toString());
+  //       await preferences.setString(AppStrings.kPrefDeviceType,
+  //           _usersData[0][AppStrings.kPrefDeviceType].toString());
+  //     }
+  //   } on PlatformException {
+  //     print('Failed to get platform version');
+  //   }
+  // }
+
   Future<void> generateExampleDocument() async {
     print('generateExampleDocument');
 
@@ -200,13 +294,35 @@ class _HomePageState extends State<HomePage> {
     // var document =
     //     parse('<body>Hello world! <a href="www.html5rocks.com">HTML5 rocks!');
     // print(document.outerHtml);
-
-    var generatedPdfFile = await FlutterHtmlToPdf.convertFromHtmlContent(
-        cfData, targetPath!, targetFileName);
-    print(generatedPdfFile);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(generatedPdfFile.toString()),
-    ));
+    // print('niti');
+    // print('${html2md.convert(cfData)}');
+    // html2md.convert(cfData);
+    var bytes = await WebcontentConverter.contentToImage(content: cfData);
+    if (bytes.length > 0) {
+      saveImage(bytes);
+    }
+    else{
+      print('else');
+    }
+    // final controller = ScreenshotController();
+    // Uint8List bytes = await controller.captureFromWidget(
+    //     MediaQuery(
+    //         data: const MediaQueryData(),
+    //         child: Html(
+    //             shrinkWrap: true,
+    //             data: cfData
+    //         )
+    //     )
+    // );
+    // File file = await File('$targetPath/$targetFileName.png').create();
+    // file.writeAsBytesSync(bytes);
+    // return file;
+    // var generatedPdfFile = await FlutterHtmlToPdf.convertFromHtmlContent(
+    //     cfData, targetPath!, targetFileName);
+    // print(generatedPdfFile);
+    // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    //   content: Text(generatedPdfFile.toString()),
+    // ));
   }
 
   Future<String?> get _localPath async {
@@ -532,6 +648,12 @@ class _HomePageState extends State<HomePage> {
   //   await OpenFile.open(file.path);
   // }
 
+  Future saveImage(Uint8List bytes) async {
+    final appStorage = await getApplicationDocumentsDirectory();
+    final file = File('${appStorage.path}/example.png');
+      await file.writeAsBytes(bytes);
+  }
+
   @override
   Widget build(BuildContext context) {
     // print('url testing:${_controller.evaluateJavascript(source: "window.document.URL;")}');
@@ -619,27 +741,33 @@ class _HomePageState extends State<HomePage> {
                     String html = await _controller.evaluateJavascript(
                         source: "window.document.body.innerHTML;");
                     print(html);
+                    // final bytes = await controller.captureFromWidget(Material(child: document.Document.html(html) as Widget));
+
+                    // setState(() {
+                    //   this.bytes = bytes;
+                    // });
+                    // saveImage(bytes);
                     convert(html,
                         "File Name${DateTime.now().toString().split(' ').first}${DateTime.now().hour}${DateTime.now().minute}${DateTime.now().second}");
-                    var targetPath2 = await _localPath;
-                    File pdfFile() {
-                      if (Platform.isIOS) {
-                        return File(targetPath2.toString() +
-                            "/" +
-                            "File Name333" +
-                            '.pdf'); // for ios
-                      } else {
-                        print("aaaaa " + targetPath2.toString());
-                        // File('storage/emulated/0/Download/' + cfData + '.pdf')
-                        return File(targetPath2.toString() +
-                            "/" +
-                            "File Name" +
-                            '.doc'); // for android
-                      }
-                    }
-
-                    SfPdfViewer.file(pdfFile());
-                    generateExampleDocument();
+                    // var targetPath2 = await _localPath;
+                    // File pdfFile() {
+                    //   if (Platform.isIOS) {
+                    //     return File(targetPath2.toString() +
+                    //         "/" +
+                    //         "File Name333" +
+                    //         '.pdf'); // for ios
+                    //   } else {
+                    //     print("aaaaa " + targetPath2.toString());
+                    //     // File('storage/emulated/0/Download/' + cfData + '.pdf')
+                    //     return File(targetPath2.toString() +
+                    //         "/" +
+                    //         "File Name" +
+                    //         '.doc'); // for android
+                    //   }
+                    // }
+                    //
+                    // SfPdfViewer.file(pdfFile());
+                    // generateExampleDocument();
                     print('download_successfull..//:');
                     // Navigator.push(context, MaterialPageRoute(builder: (context)=> const AppsStorePage()));
                   },

@@ -39,7 +39,7 @@ import 'package:pdf/pdf.dart';
 // import 'package:webview_flutter/webview_flutter.dart';
 // import 'package:webview_flutter_upload/webview_flutter.dart';
 import 'package:html/parser.dart' show parse;
-import 'package:webcontent_converter/webcontent_converter.dart';
+// import 'package:webcontent_converter/webcontent_converter.dart';
 
 final webViewKey = GlobalKey<_HomePageState>();
 
@@ -85,13 +85,15 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
+    print('home page');
     super.initState();
     _token = '';
     _deviceType = '';
     SharedPreferences.getInstance().then((value) async {
+      print('nidhi1111');
       await Firebase.initializeApp();
       print('nidhi');
-      messaging = FirebaseMessaging.instance;
+      FirebaseMessaging? messaging = FirebaseMessaging.instance;
 
       preferences = value;
       messaging.getToken().then((value) async {
@@ -297,13 +299,13 @@ class _HomePageState extends State<HomePage> {
     // print('niti');
     // print('${html2md.convert(cfData)}');
     // html2md.convert(cfData);
-    var bytes = await WebcontentConverter.contentToImage(content: cfData);
-    if (bytes.length > 0) {
-      saveImage(bytes);
-    }
-    else{
-      print('else');
-    }
+    // var bytes = await WebcontentConverter.contentToImage(content: cfData);
+    // if (bytes.length > 0) {
+    //   saveImage(bytes);
+    // }
+    // else{
+    //   print('else');
+    // }
     // final controller = ScreenshotController();
     // Uint8List bytes = await controller.captureFromWidget(
     //     MediaQuery(
@@ -317,12 +319,12 @@ class _HomePageState extends State<HomePage> {
     // File file = await File('$targetPath/$targetFileName.png').create();
     // file.writeAsBytesSync(bytes);
     // return file;
-    // var generatedPdfFile = await FlutterHtmlToPdf.convertFromHtmlContent(
-    //     cfData, targetPath!, targetFileName);
-    // print(generatedPdfFile);
-    // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-    //   content: Text(generatedPdfFile.toString()),
-    // ));
+    var generatedPdfFile = await FlutterHtmlToPdf.convertFromHtmlContent(
+        cfData, targetPath!, targetFileName);
+    print(generatedPdfFile);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(generatedPdfFile.toString()),
+    ));
   }
 
   Future<String?> get _localPath async {
@@ -656,6 +658,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    print('home page build');
     // print('url testing:${_controller.evaluateJavascript(source: "window.document.URL;")}');
     // var appBarColor = AppColors.kAppBarColor;
     return WillPopScope(

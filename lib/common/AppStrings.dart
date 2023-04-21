@@ -38,6 +38,9 @@ class AppStrings{
   static const String kGetPrivacyPolicyUrl = '$kBaseUrl/getprivacy_policy';
   static const String kGetUserGuideUrl = '$kBaseUrl/getuser_guide';
 
+  //Create Your Own page
+  static const kWhatYouNeed = 'What do you need?';
+
   //Prefernces
   static const String kNotificationEnable = 'Notification_Enable';
   static const kPrefDeviceToken = 'device_token';

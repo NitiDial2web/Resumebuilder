@@ -11,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_html_to_pdf/flutter_html_to_pdf.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:html/dom.dart' as document;
 
 // import 'package:flutter_webview_plugin/flutter_webview_plugin.dart';
@@ -24,9 +25,9 @@ import 'package:remuse_builder/common/AppButtons.dart';
 import 'package:remuse_builder/common/AppColors.dart';
 import 'package:remuse_builder/common/AppStrings.dart';
 import 'package:remuse_builder/screens/apps_store.dart';
+import 'package:remuse_builder/screens/create_your_own.dart';
 import 'package:remuse_builder/screens/settings_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:screenshot/screenshot.dart';
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 import 'package:tab_indicator_styler/tab_indicator_styler.dart';
 // import 'package:html2md/html2md.dart' as html2md;
@@ -96,20 +97,20 @@ class _HomePageState extends State<HomePage> {
       FirebaseMessaging? messaging = FirebaseMessaging.instance;
 
       preferences = value;
-      messaging.getToken().then((value) async {
-        print('Firebase registration token $value');
-        _token = value.toString();
-        print('_token:$_token');
-        await preferences.setString(AppStrings.kPrefDeviceToken, _token);
-        if (Platform.isAndroid) {
-          await preferences.setString(AppStrings.kPrefDeviceType, 'Android');
-        }
-        if (Platform.isIOS) {
-          await preferences.setString(AppStrings.kPrefDeviceType, 'Ios');
-        }
-        print(
-            'login device token is ${preferences.getString(AppStrings.kPrefDeviceToken)}');
-      });
+      // messaging.getToken().then((value) async {
+      //   print('Firebase registration token $value');
+      //   _token = value.toString();
+      //   print('_token:$_token');
+      //   await preferences.setString(AppStrings.kPrefDeviceToken, _token);
+      //   if (Platform.isAndroid) {
+      //     await preferences.setString(AppStrings.kPrefDeviceType, 'Android');
+      //   }
+      //   if (Platform.isIOS) {
+      //     await preferences.setString(AppStrings.kPrefDeviceType, 'Ios');
+      //   }
+      //   print(
+      //       'login device token is ${preferences.getString(AppStrings.kPrefDeviceToken)}');
+      // });
     });
 
     if (Platform.isAndroid) {
@@ -1733,9 +1734,59 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-              const Center(
-                child: Text("My Design"),
+              Column(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      print('object111');
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) =>
+                              const CreateYourOwnPage()));
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: 130,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.all(
+                            Radius.circular(15),
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.kDarkGrey,
+                              // offset: Offset(0.0, 0),
+                              blurRadius: 5,
+                              // spreadRadius: 0.0,
+                            ), //BoxShadow
+                          ],
+                        ),
+                        child: Column(
+                          mainAxisAlignment:
+                          MainAxisAlignment.center,
+                          // crossAxisAlignment: CrossAxisAlignment.center,
+                          children: const [
+                            FaIcon(FontAwesomeIcons.add),
+                            SizedBox(
+                              height: 10,
+                            ),
+                            Text(
+                              'Create Your Own',
+                              style: TextStyle(fontSize: 20),
+                            )
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               )
+              // const Center(
+              //   child: Text("My Design"),
+              // )
             ],
           ),
         ),
